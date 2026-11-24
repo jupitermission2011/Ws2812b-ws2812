@@ -1,7 +1,7 @@
 
 #include <Adafruit_NeoPixel.h>
 
-#define LED_PIN       7
+#define LED_PIN       7  // Data out add a 220 to 300 ohm resistor 
 #define BUTTON_NEXT   3  // Button To Go Forward
 #define BUTTON_PREV   4  // Button To Go Backward
 #define NUM_LEDS     100  // Bumber of LEDs no more than 500 led

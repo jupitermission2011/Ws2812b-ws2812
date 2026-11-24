@@ -1,10 +1,10 @@
 
 #include <Adafruit_NeoPixel.h>
 
-#define LED_PIN       6
-#define BUTTON_NEXT   2  // Button to go forward
-#define BUTTON_PREV   3  // Button to go backward
-#define NUM_LEDS     16  // Change this to match your number of LEDs
+#define LED_PIN       7
+#define BUTTON_NEXT   3  // Button To Go Forward
+#define BUTTON_PREV   4  // Button To Go Backward
+#define NUM_LEDS     100  // Bumber of LEDs no more than 500 led
 
 Adafruit_NeoPixel strip(NUM_LEDS, LED_PIN, NEO_GRB + NEO_KHZ800);
 
@@ -18,7 +18,6 @@ const int debounceDelay = 50;
 bool lastNextState = HIGH;
 bool lastPrevState = HIGH;
 
-// Animation timing trackers
 unsigned long lastEffectTime = 0;
 int effectStep = 0;
 
@@ -36,12 +35,11 @@ void loop() {
   runActiveMood();
 }
 
-// Scans both buttons and handles wrapping around the 0-9 boundary safely
 void checkButtons() {
   bool readingNext = digitalRead(BUTTON_NEXT);
   bool readingPrev = digitalRead(BUTTON_PREV);
 
-  // Check Next Button
+  
   if (readingNext != lastNextState) { lastDebounceTimeNext = millis(); }
   if ((millis() - lastDebounceTimeNext) > debounceDelay) {
     if (readingNext == LOW && lastNextState == HIGH) {
@@ -51,7 +49,7 @@ void checkButtons() {
   }
   lastNextState = readingNext;
 
-  // Check Previous Button
+  
   if (readingPrev != lastPrevState) { lastDebounceTimePrev = millis(); }
   if ((millis() - lastDebounceTimePrev) > debounceDelay) {
     if (readingPrev == LOW && lastPrevState == HIGH) {
@@ -68,7 +66,7 @@ void resetForNewMode() {
   strip.show();
 }
 
-// Switches between the 10 custom modes
+// the 10 modes
 void runActiveMood() {
   switch (currentMode) {
     case 0: moodSlowRainbow(20); break; // 1. Rainbow Cycle
@@ -84,7 +82,7 @@ void runActiveMood() {
   }
 }
 
-// --- THE 10 MOOD ANIMATIONS ---
+// 10 mode animation 
 
 // 1. Rainbow Cycle
 void moodSlowRainbow(int speedDelay) {
@@ -231,3 +229,5 @@ uint32_t colorWheel(byte WheelPos) {
   WheelPos -= 170;
   return strip.Color(WheelPos * 3, 255 - WheelPos * 3, 0);
 }
+
+// hello friends 

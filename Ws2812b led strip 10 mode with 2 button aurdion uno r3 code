@@ -1,0 +1,233 @@
+
+#include <Adafruit_NeoPixel.h>
+
+#define LED_PIN       6
+#define BUTTON_NEXT   2  // Button to go forward
+#define BUTTON_PREV   3  // Button to go backward
+#define NUM_LEDS     16  // Change this to match your number of LEDs
+
+Adafruit_NeoPixel strip(NUM_LEDS, LED_PIN, NEO_GRB + NEO_KHZ800);
+
+int currentMode = 0;
+const int totalModes = 10;
+
+// Debounce trackers
+unsigned long lastDebounceTimeNext = 0;
+unsigned long lastDebounceTimePrev = 0;
+const int debounceDelay = 50;
+bool lastNextState = HIGH;
+bool lastPrevState = HIGH;
+
+// Animation timing trackers
+unsigned long lastEffectTime = 0;
+int effectStep = 0;
+
+void setup() {
+  pinMode(BUTTON_NEXT, INPUT_PULLUP);
+  pinMode(BUTTON_PREV, INPUT_PULLUP);
+  
+  strip.begin();
+  strip.setBrightness(60); 
+  strip.show(); 
+}
+
+void loop() {
+  checkButtons();
+  runActiveMood();
+}
+
+// Scans both buttons and handles wrapping around the 0-9 boundary safely
+void checkButtons() {
+  bool readingNext = digitalRead(BUTTON_NEXT);
+  bool readingPrev = digitalRead(BUTTON_PREV);
+
+  // Check Next Button
+  if (readingNext != lastNextState) { lastDebounceTimeNext = millis(); }
+  if ((millis() - lastDebounceTimeNext) > debounceDelay) {
+    if (readingNext == LOW && lastNextState == HIGH) {
+      currentMode = (currentMode + 1) % totalModes;
+      resetForNewMode();
+    }
+  }
+  lastNextState = readingNext;
+
+  // Check Previous Button
+  if (readingPrev != lastPrevState) { lastDebounceTimePrev = millis(); }
+  if ((millis() - lastDebounceTimePrev) > debounceDelay) {
+    if (readingPrev == LOW && lastPrevState == HIGH) {
+      currentMode = (currentMode - 1 + totalModes) % totalModes;
+      resetForNewMode();
+    }
+  }
+  lastPrevState = readingPrev;
+}
+
+void resetForNewMode() {
+  effectStep = 0;
+  strip.clear();
+  strip.show();
+}
+
+// Switches between the 10 custom modes
+void runActiveMood() {
+  switch (currentMode) {
+    case 0: moodSlowRainbow(20); break; // 1. Rainbow Cycle
+    case 1: moodSunset(30);      break; // 2. Warm Sunset Glow
+    case 2: moodOcean(40);       break; // 3. Deep Sea Waves
+    case 3: moodForest(35);      break; // 4. Calm Forest Green
+    case 4: moodCyberpunk(25);   break; // 5. Neon Pink & Cyan Pulse
+    case 5: moodFireplace(40);   break; // 6. Flickering Warm Fire
+    case 6: moodLava(30);        break; // 7. Slow Rolling Orange Lava
+    case 7: moodAurora(50);      break; // 8. Northern Lights Teal/Purple
+    case 8: moodCandle(60);      break; // 9. Warm Amber Breathe
+    case 9: moodWhiteStatic();   break; // 10. Crisp Neutral White Light
+  }
+}
+
+// --- THE 10 MOOD ANIMATIONS ---
+
+// 1. Rainbow Cycle
+void moodSlowRainbow(int speedDelay) {
+  if (millis() - lastEffectTime > speedDelay) {
+    lastEffectTime = millis();
+    for (int i = 0; i < strip.numPixels(); i++) {
+      byte wheelPos = (i * 256 / strip.numPixels() + effectStep) & 255;
+      strip.setPixelColor(i, colorWheel(wheelPos));
+    }
+    strip.show();
+    effectStep = (effectStep + 1) & 255;
+  }
+}
+
+// 2. Warm Sunset Glow
+void moodSunset(int speedDelay) {
+  if (millis() - lastEffectTime > speedDelay) {
+    lastEffectTime = millis();
+    int pulse = (sin(effectStep * 0.05) * 40) + 40; 
+    for (int i = 0; i < strip.numPixels(); i++) {
+      strip.setPixelColor(i, strip.Color(200 + pulse, 40 + (pulse / 2), 0));
+    }
+    strip.show();
+    effectStep++;
+  }
+}
+
+// 3. Deep Sea Waves
+void moodOcean(int speedDelay) {
+  if (millis() - lastEffectTime > speedDelay) {
+    lastEffectTime = millis();
+    int pulse = (cos(effectStep * 0.03) * 40) + 40; 
+    for (int i = 0; i < strip.numPixels(); i++) {
+      strip.setPixelColor(i, strip.Color(0, 30 + pulse, 140 + pulse));
+    }
+    strip.show();
+    effectStep++;
+  }
+}
+
+// 4. Calm Forest Green
+void moodForest(int speedDelay) {
+  if (millis() - lastEffectTime > speedDelay) {
+    lastEffectTime = millis();
+    for (int i = 0; i < strip.numPixels(); i++) {
+      int greenVal = (sin((i * 0.4) + (effectStep * 0.04)) * 50) + 100;
+      strip.setPixelColor(i, strip.Color(5, greenVal, 15));
+    }
+    strip.show();
+    effectStep++;
+  }
+}
+
+// 5. Neon Pink & Cyan Pulse (Cyberpunk)
+void moodCyberpunk(int speedDelay) {
+  if (millis() - lastEffectTime > speedDelay) {
+    lastEffectTime = millis();
+    float wave = sin(effectStep * 0.05);
+    for (int i = 0; i < strip.numPixels(); i++) {
+      if (i % 2 == 0) {
+        strip.setPixelColor(i, strip.Color(230 + (wave * 25), 0, 120)); // Hot Pink
+      } else {
+        strip.setPixelColor(i, strip.Color(0, 200 + (wave * 30), 220)); // Cyan
+      }
+    }
+    strip.show();
+    effectStep++;
+  }
+}
+
+// 6. Flickering Warm Fire
+void moodFireplace(int speedDelay) {
+  if (millis() - lastEffectTime > speedDelay) {
+    lastEffectTime = millis();
+    for (int i = 0; i < strip.numPixels(); i++) {
+      int flicker = random(0, 50);
+      int r = 200 - flicker;
+      int g = 60 - (flicker / 2);
+      strip.setPixelColor(i, strip.Color(r, g < 0 ? 0 : g, 0));
+    }
+    strip.show();
+  }
+}
+
+// 7. Slow Rolling Orange Lava
+void moodLava(int speedDelay) {
+  if (millis() - lastEffectTime > speedDelay) {
+    lastEffectTime = millis();
+    for (int i = 0; i < strip.numPixels(); i++) {
+      int lavaMove = (sin((i * 0.8) + (effectStep * 0.03)) * 60) + 60;
+      strip.setPixelColor(i, strip.Color(160 + lavaMove, 20 + (lavaMove / 3), 0));
+    }
+    strip.show();
+    effectStep++;
+  }
+}
+
+// 8. Northern Lights Teal/Purple (Aurora)
+void moodAurora(int speedDelay) {
+  if (millis() - lastEffectTime > speedDelay) {
+    lastEffectTime = millis();
+    for (int i = 0; i < strip.numPixels(); i++) {
+      int blend = (sin((i * 0.3) + (effectStep * 0.02)) * 127) + 128;
+      // Interpolate between Teal (0, 180, 150) and Purple (130, 0, 180)
+      int r = (blend * 130) / 255;
+      int g = ((255 - blend) * 180) / 255;
+      int b = 150 + ((blend * 30) / 255);
+      strip.setPixelColor(i, strip.Color(r, g, b));
+    }
+    strip.show();
+    effectStep++;
+  }
+}
+
+// 9. Warm Amber Breathe (Candle Light)
+void moodCandle(int speedDelay) {
+  if (millis() - lastEffectTime > speedDelay) {
+    lastEffectTime = millis();
+    float breath = (exp(sin(effectStep * 0.03)) - 0.36787944) * 108.0; // Smooth natural breath wave
+    for (int i = 0; i < strip.numPixels(); i++) {
+      strip.setPixelColor(i, strip.Color(breath + 40, (breath * 0.4) + 10, 0));
+    }
+    strip.show();
+    effectStep++;
+  }
+}
+
+// 10. Crisp Neutral White Light
+void moodWhiteStatic() {
+  for (int i = 0; i < strip.numPixels(); i++) {
+    strip.setPixelColor(i, strip.Color(180, 160, 140)); // Warm neutral white blend
+  }
+  strip.show();
+}
+
+// Helper to calculate rainbow color wheel transitions
+uint32_t colorWheel(byte WheelPos) {
+  WheelPos = 255 - WheelPos;
+  if (WheelPos < 85) { return strip.Color(255 - WheelPos * 3, 0, WheelPos * 3); }
+  if (WheelPos < 170) {
+    WheelPos -= 85;
+    return strip.Color(0, WheelPos * 3, 255 - WheelPos * 3);
+  }
+  WheelPos -= 170;
+  return strip.Color(WheelPos * 3, 255 - WheelPos * 3, 0);
+}
